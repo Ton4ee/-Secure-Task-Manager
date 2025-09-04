@@ -1,0 +1,57 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    container_name: taskmanager_db
+    restart: always
+    environment:
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpass
+      POSTGRES_DB: taskmanager
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./backend
+    container_name: taskmanager_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - JWT_SECRET=supersecretkey
+      - DB_USER=taskuser
+      - DB_PASSWORD=taskpass
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=taskmanager
+      - CHOKIDAR_USEPOLLING=true   # important for Windows file watching
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  frontend:
+    build: ./frontend
+    container_name: taskmanager_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true   # important for Windows file watching
+      - REACT_APP_API_URL=http://localhost:5000
+      - HOST=0.0.0.0
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+volumes:
+  db_data:
+
+
